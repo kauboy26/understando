@@ -8,7 +8,7 @@ class MessageQueue:
         self.address_to_messages = {}
 
     def shallow_copy(self):
-        copy = MessageQueue
+        copy = MessageQueue()
         copy.address_to_messages = self.address_to_messages.copy()
 
         return copy
@@ -19,30 +19,40 @@ class MessageQueue:
         message and the cloned message queue.
         """
         if addr is None:
-            print("'None' address passed.")
-            assert(False)
+            raise ValueError("'None' address passed.")
         
         if addr not in self.address_to_messages or not self.address_to_messages[addr]:
-            print(f"Doing nothing; no messages to address {addr}.")
+            # print(f"Doing nothing; no messages to address {addr}.")
             return (None, self)
 
         copy = self.shallow_copy()
-        messages = self.address_to_messages[addr].copy()
-
-        m = messages.pop()
-        self.address_to_messages[addr] = messages
+        copy.address_to_messages[addr] = copy.address_to_messages[addr].copy()
+        m = copy.address_to_messages[addr].pop()
 
         return (m, copy)
 
     def send_messages(self, messages_to_send):
         """
-        Mutates the object and adds messages to appropriate channels.
+        Clones the message queue and returns the new queue, with the messages appended to the
+        appropriate channels.
         """
-        for m, from_addr, to_addr in messages_to_send:
-            if to_addr not in self.address_to_messages:
-                self.address_to_messages[to_addr] = []
+        copy = self.shallow_copy()
 
-            self.address_to_messages[to_addr].append((m, from_addr))
+        addrs_channels_cloned = {}
+
+        for m, from_addr, to_addr in messages_to_send:
+            if to_addr in addrs_channels_cloned:
+                copy.address_to_messages[to_addr].append((m, from_addr))
+                continue
+            
+            addrs_channels_cloned[to_addr] = 1
+            if to_addr not in copy.address_to_messages:
+                copy.address_to_messages[to_addr] = []
+            else:
+                copy.address_to_messages[to_addr] = self.address_to_messages[to_addr].copy()
+            copy.address_to_messages[to_addr].append((m, from_addr))
+        
+        return copy
 
     def __str__(self):
         """
@@ -52,8 +62,8 @@ class MessageQueue:
         for k in sorted(self.address_to_messages.keys()):
             if not self.address_to_messages[k]:
                 continue
-            pieces.extend(['a: ', str(k), '; m: ', str(self.address_to_messages[k])])
-        
+            pieces.extend(['(address:', str(k), '; m:', str(self.address_to_messages[k]), ')'])
+
         return ' '.join(pieces)
 
 
@@ -63,14 +73,23 @@ class SystemState:
     point in time.
     """
 
-    def __init__(self, messages=None, nodes=None):
-        self.messages = MessageQueue()
-        self.nodes = {}
-        self.previous_state = None
+    def __init__(self, messages=None, nodes=None, previous_state=None):
+        self.messages = messages
+        self.nodes = nodes
+        self.previous_state = previous_state
 
         pass
 
-    def generate_successor_state_from_message(self, addr):
+    def generate_successor_state_from_message(self, m, from_addr, to_addr):
+        """A way to send a message into the message queue from an arbitrary source."""
+
+        message_queue_copy = self.messages.send_messages([(m, from_addr, to_addr)])
+
+        state_copy = SystemState(message_queue_copy, self.nodes, self)
+
+        return state_copy
+
+    def generate_successor_state_from_address(self, addr):
         """
         Generate a successor state by allowing an address to receive a message.
         """
@@ -80,16 +99,10 @@ class SystemState:
             return None
         
         node_copy, messages_to_send = self.nodes[addr].base_receive_message(m_a[0], m_a[1])
-        message_queue_copy.send_messages(messages_to_send)
+        message_queue_copy = message_queue_copy.send_messages(messages_to_send)
 
-        state_copy = SystemState()
-
-        state_copy.messages = message_queue_copy
-
-        state_copy.nodes = self.nodes.copy()
+        state_copy = SystemState(message_queue_copy, self.nodes.copy(), self)
         state_copy.nodes[addr] = node_copy
-
-        state_copy.previous_state = self
 
         return state_copy
 
@@ -102,7 +115,7 @@ class SystemState:
         frontier = []
 
         for addr in self.nodes.keys():
-            next_state = self.generate_successor_state_from_message(addr)
+            next_state = self.generate_successor_state_from_address(addr)
             if next_state is None:
                 continue
 
@@ -137,6 +150,7 @@ def system_state_BFS(start_state, depth_limit, predicate):
 
     while len(state_queue) != 0:
         d, curr_state = state_queue.pop()
+        # print(f"d: {d}, curr: ({str(curr_state)})")
         if str(curr_state) in states_examined or d >= depth_limit:
             continue
 
@@ -149,5 +163,25 @@ def system_state_BFS(start_state, depth_limit, predicate):
         for next_state in frontier:
             if str(next_state) not in states_examined:
                 state_queue.appendleft((d + 1, next_state))
-    
-    return states_found
+
+    return states_found, states_examined
+
+class SearchAlgorithm:
+    """
+    The recommended way to initialize an algorithm and start it.
+    """
+
+    def __init__(self, nodes, starting_messages):
+        """Set up the starting state for the search."""
+
+        messages = MessageQueue()
+        messages = messages.send_messages(starting_messages)
+
+        node_dict = {}
+        for n in nodes:
+            node_dict[n.addr] = n
+
+        self.init_state = SystemState(messages, node_dict)
+
+    def start_search(self, depth_limit, predicate):
+        return system_state_BFS(self.init_state, depth_limit, predicate)

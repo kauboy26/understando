@@ -17,9 +17,12 @@ class BaseNode:
     def __str__(self):
         return f"(node_addr: {self.addr})"
     
-    def send_message(self, m, to_addr):
-        self.message_buffer.append((m, self.addr, to_addr))
+    def __repr__(self):
+        return self.__str__()
     
+    def send_message(self, m, to_addr):
+        self.message_buffer.append((copy.deepcopy(m), self.addr, to_addr))
+
     def base_receive_message(self, m, from_addr):
         """
         The method called by the state searcher during BFS. Not to be called by any particular
@@ -45,3 +48,6 @@ class BaseMessage:
     
     def __str__(self):
         return f"(p: {self.payload})"
+    
+    def __repr__(self):
+        return self.__str__()
