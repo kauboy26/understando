@@ -1,6 +1,7 @@
 """A sample implementation for the sake of testing."""
 
 from corelib import system_components
+from corelib.utils import dict_to_str
 
 class DummyMessage(system_components.BaseMessage):
 
@@ -9,12 +10,7 @@ class DummyMessage(system_components.BaseMessage):
         self.body = body
     
     def __str__(self):
-        pieces = ['(']
-        for k in sorted(self.body.keys()):
-            pieces.extend([str(k), ':', str(self.body[k]), ';'])
-        pieces.append(')')
-        
-        return ' '.join(pieces)
+        return dict_to_str(self.body)
     
     def __repr__(self):
         return self.__str__()
@@ -29,7 +25,7 @@ class DummyNode(system_components.BaseNode):
         self.other_addresses = [a for a in all_addresses if a != addr]
     
     def __str__(self):
-        return f"(addr: {self.addr}, val: {self.value}, lead: {self.am_leader}, vote: {self.votes})"
+        return f"{{addr: {self.addr}, val: {self.value}, lead: {self.am_leader}, vote: {self.votes}}}"
 
     def __repr__(self):
         return self.__str__()
