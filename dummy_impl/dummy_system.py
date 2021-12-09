@@ -25,7 +25,7 @@ class DummyNode(system_components.BaseNode):
         self.other_addresses = [a for a in all_addresses if a != addr]
     
     def __str__(self):
-        return f"{{addr: {self.addr}, val: {self.value}, lead: {self.am_leader}, vote: {self.votes}}}"
+        return f'{{"addr": "{self.addr}", "val": "{self.value}", "lead": "{self.am_leader}", "vote": {self.votes}}}'
 
     def __repr__(self):
         return self.__str__()

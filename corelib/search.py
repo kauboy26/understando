@@ -38,7 +38,7 @@ class MessageFunnel:
         return list(self.source_to_message.keys())
 
     def __repr__(self):
-        return f"{{dest: {self.destination}, sources: {dict_to_str(self.source_to_message)}}}"
+        return f'{{"dest": "{self.destination}", "sources": {dict_to_str(self.source_to_message)}}}'
     
     def __str__(self):
         return self.__repr__()
@@ -150,7 +150,30 @@ class SystemState:
         """
         Converts to a string form for hashing.
         """
-        return f"{{nodes: {dict_to_str(self.nodes)}, messages: {str(self.message_network)}}}"
+        return f'{{"nodes": {dict_to_str(self.nodes)}, "messages": {str(self.message_network)}}}'
+
+def build_start_state_from_raw_materials(starting_messages, nodes):
+    """
+    Build a start state with the given nodes in whatever state, and some starting messages for
+    the network.
+    starting_messages: a list of (message, from_addr, to_addr) tuples
+    nodes: a list of nodes
+    """
+    messages = MessageNetwork()
+    messages = messages.send_messages(starting_messages)
+
+    node_dict = {}
+    for n in nodes:
+        node_dict[n.addr] = n
+
+    return SystemState(messages, node_dict)
+
+def build_start_state_from_existing_state(existing_state):
+    """
+    Builds a state from an existing state. The resulting state will have lost its history.
+    """
+    # The previous state of the returned state is wiped.
+    return SystemState(existing_state.message_network, existing_state.nodes, None)
 
 def system_state_BFS(start_state, depth_limit, predicate):
     """
@@ -166,7 +189,6 @@ def system_state_BFS(start_state, depth_limit, predicate):
 
     while len(state_queue) != 0:
         d, curr_state = state_queue.pop()
-        # print(f"d: {d}, curr: ({str(curr_state)})")
         if str(curr_state) in states_examined or d >= depth_limit:
             continue
 
@@ -182,22 +204,21 @@ def system_state_BFS(start_state, depth_limit, predicate):
 
     return states_found, states_examined
 
-class SearchAlgorithm:
+def find_predicate_transition(start_state, end_state, predicate):
     """
-    The recommended way to initialize an algorithm and start it.
+    For states [start_state -> S0 -> S1 -> ... -> end_state], returns the states at which the
+    predicate evaluates to True.
     """
-
-    def __init__(self, nodes, starting_messages):
-        """Set up the starting state for the search."""
-
-        messages = MessageNetwork()
-        messages = messages.send_messages(starting_messages)
-
-        node_dict = {}
-        for n in nodes:
-            node_dict[n.addr] = n
-
-        self.init_state = SystemState(messages, node_dict)
-
-    def start_search(self, depth_limit, predicate):
-        return system_state_BFS(self.init_state, depth_limit, predicate)
+    curr = end_state
+    states_found = []
+    while curr is not None and str(curr) != str(start_state):
+        if predicate(curr):
+            states_found.append(curr)
+        curr = curr.previous_state
+    
+    if curr is not None:
+        if predicate(curr):
+            states_found.append(curr)
+    else:
+        print(f"Start state ({start_state}) was not an ancestor of the given end state ({end_state})")
+    return states_found
