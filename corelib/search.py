@@ -88,6 +88,12 @@ class MessageNetwork:
     def __str__(self):
         """
         Convert the message queue to a string representation, to be used to hash the state later.
+        Unfortunately, a simple freeze of the entire state cannot be performed because some
+        variables exist only for implementation convenience and aren't actually tied to the actual
+        system state.
+
+        It is duty of the distributed algorithm implementers to make sure the node's string
+        representation correctly captures the state.
         """
         return dict_to_str(self.address_to_messages)
 
