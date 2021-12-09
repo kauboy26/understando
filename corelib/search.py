@@ -181,7 +181,7 @@ def build_start_state_from_existing_state(existing_state):
     # The previous state of the returned state is wiped.
     return SystemState(existing_state.message_network, existing_state.nodes, None)
 
-def system_state_BFS(start_state, depth_limit, predicate):
+def system_state_BFS(start_state, depth_limit, predicate, should_skip):
     """
     Run a BFS and capture all the states that are matching the predicate, until the given depth has
     been exhausted.
@@ -195,7 +195,7 @@ def system_state_BFS(start_state, depth_limit, predicate):
 
     while len(state_queue) != 0:
         d, curr_state = state_queue.pop()
-        if str(curr_state) in states_examined or d >= depth_limit:
+        if str(curr_state) in states_examined or d >= depth_limit or should_skip(curr):
             continue
 
         if predicate(curr_state):
