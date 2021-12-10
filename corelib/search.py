@@ -197,7 +197,6 @@ def system_state_BFS(start_state, depth_limit, predicate, should_skip):
 
     while len(state_queue) != 0:
         d, curr_state = state_queue.pop()
-        print(d, str(curr_state))
         if str(curr_state) in states_examined or d >= depth_limit or should_skip(curr_state):
             continue
 

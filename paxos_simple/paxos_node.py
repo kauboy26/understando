@@ -13,7 +13,7 @@ ACCEPT_ACK = "accept_ack"
 
 class PaxosSimpleMessage(BaseMessage):
     def __init__(self, message_type, body):
-        super().__init__(message_type)
+        super().__init__()
         self.message_type = message_type
         self.body = body
     
@@ -36,7 +36,7 @@ class PaxosSimpleAcceptor(BaseNode):
 
     def __str__(self):
         return f'''{{"prom": {self.promised}, "acc_v": {self.accepted_value},
-                "acc_num": {self.accepted_num}'''
+                "acc_num": {self.accepted_num}}}'''
 
     def __repr__(self):
         return self.__str__()
@@ -47,6 +47,7 @@ class PaxosSimpleAcceptor(BaseNode):
                 # Ignore the prepare if we have already promised not to accept.
                 return
 
+            self.promised = m.body["proposal_num"]
             body = {}
             if self.accepted_num is not None:
                 body["accepted_num"] = self.accepted_num
@@ -70,7 +71,7 @@ class PaxosSimpleProposer(BaseNode):
         super().__init__(addr, all_addresses)
         self.value = None
         self.proposal_num = proposal_num
-        self.acceptor_addresses = ['acceptor' in all_addresses]
+        self.acceptor_addresses = [addr for addr in all_addresses if 'acceptor' in addr]
         self.p1_acks = {}
         self.p2_acks = {}
 
@@ -121,7 +122,7 @@ class PaxosSimpleProposer(BaseNode):
                 self.highest_proposal_num_seen = m.body["accepted_num"]
                 self.value = m.body["accepted_value"]
 
-        if len(self.p1_acks) > (len(self.acceptor_addresses) // 2 + 1):
+        if len(self.p1_acks) >= (len(self.acceptor_addresses) // 2 + 1):
             self.phase_2 = True
             # Send 'accept' messages.
             for acc in self.acceptor_addresses:
@@ -135,4 +136,4 @@ class PaxosSimpleProposer(BaseNode):
         The response to an ACCEPT. All we do here is know whether something has been chosen.
         """
         self.p2_acks[from_addr] = 1
-        self.chosen = len(self.p2_acks) > len(self.acceptor_addresses // 2 + 1)
+        self.chosen = len(self.p2_acks) >= (len(self.acceptor_addresses) // 2 + 1)

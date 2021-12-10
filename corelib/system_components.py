@@ -43,11 +43,11 @@ class BaseNode:
         raise NotImplementedError("Implement this method!")
 
 class BaseMessage:
-    def __init__(self, payload):
-        self.payload = payload
-    
+    def __init__(self):
+        pass
+
     def __str__(self):
-        return f"(p: {self.payload})"
-    
+        return f"BaseMessage"
+
     def __repr__(self):
         return self.__str__()

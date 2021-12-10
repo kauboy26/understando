@@ -26,7 +26,11 @@ def should_skip(state):
 states_found, states_examined = search.system_state_BFS(start_state, math.inf, value_chosen, should_skip)
 
 print("States examined: ", len(states_examined))
+print("States found:", len(states_found))
 
-curr = states_found[0]
+curr = states_found[20]
 
-print(json.dumps(curr, default=lambda o: o.__dict__, indent=2))
+while curr is not None:
+    printable_curr = search.build_start_state_from_existing_state(curr)
+    print(json.dumps(printable_curr, default=lambda o: o.__dict__, indent=2))
+    curr = curr.previous_state
