@@ -70,3 +70,6 @@ We can also restart the search from any other state we found interesting:
 interesting = states_found[12]
 # states_found, states_examined = search.system_state_BFS(interesting, 15, new_predicate, should_skip)
 ```
+This is useful for when you want to first find an intermediate state, and then restart your
+search with a second predicate. It is a lot faster to run two searches of depth 10 than it it is to
+run one search of depth 20 with the combined predicates.

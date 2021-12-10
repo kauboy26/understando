@@ -1,6 +1,7 @@
 from paxos_simple.paxos_node import PaxosSimpleAcceptor, PaxosSimpleProposer, PaxosSimpleMessage
 from paxos_simple.paxos_node import CLIENT_VALUE
 from corelib import search
+from corelib.search import print_unlinked_state as ps
 import math
 
 import json
@@ -8,7 +9,7 @@ import json
 # Create some acceptor nodes
 acc_nodes = [PaxosSimpleAcceptor(f'acceptor{i}', []) for i in range(3)]
 # Create some proposer nodes
-prop_nodes = [PaxosSimpleProposer(f'proposer{i}', [acc.addr for acc in acc_nodes], i) for i in range(1)]
+prop_nodes = [PaxosSimpleProposer(f'proposer{i}', [acc.addr for acc in acc_nodes], i) for i in range(2)]
 
 # Start off by having a message to each node.
 starting_messages = [(PaxosSimpleMessage(CLIENT_VALUE, {"value": p.addr}), 'client1', p.addr) for p in prop_nodes]
@@ -23,14 +24,16 @@ def value_chosen(state):
 def should_skip(state):
     return False
 
-states_found, states_examined = search.system_state_BFS(start_state, math.inf, value_chosen, should_skip)
+states_found, states_examined = search.system_state_BFS(start_state, 15, value_chosen, should_skip)
 
-print("States examined: ", len(states_examined))
-print("States found:", len(states_found))
+# The first such state that was found with a chosen value.
+curr = states_found[0]
+# Print the state:
+ps(curr)
 
-curr = states_found[20]
+# Is it possible for both proposers to have their values chosen?
+def find_prop_1(state):
+    return state.nodes['proposer1'].chosen
 
-while curr is not None:
-    printable_curr = search.build_start_state_from_existing_state(curr)
-    print(json.dumps(printable_curr, default=lambda o: o.__dict__, indent=2))
-    curr = curr.previous_state
+more_states, _ = search.system_state_BFS(curr, 12, find_prop_1, should_skip)
+# Apparently there are, since 'more_states' does not have a length of 0.
