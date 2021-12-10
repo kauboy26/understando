@@ -16,6 +16,12 @@ class PaxosSimpleMessage(BaseMessage):
         super().__init__(message_type)
         self.message_type = message_type
         self.body = body
+    
+    def __str__(self):
+        return f'{{"type": "{self.message_type}", "body": {dict_to_str(self.body)}}}'
+
+    def __repr__(self):
+        return self.__str__()
 
 class PaxosSimpleAcceptor(BaseNode):
     """
@@ -23,7 +29,7 @@ class PaxosSimpleAcceptor(BaseNode):
     """
 
     def __init__(self, addr, all_addresses):
-        super().__init__(self, addr, all_addresses)
+        super().__init__(addr, all_addresses)
         self.promised = -1
         self.accepted_value = None
         self.accepted_num = None

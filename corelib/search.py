@@ -143,6 +143,8 @@ class SystemState:
 
         for addr in self.nodes.keys():
             # TODO: Fix this long chain of calls.
+            if addr not in self.message_network.address_to_messages:
+                continue
             for from_addr in self.message_network.address_to_messages[addr].get_from_addresses():
                 next_state = self.generate_successor_state_from_addresses(from_addr, addr)
                 if next_state is None:
@@ -195,7 +197,8 @@ def system_state_BFS(start_state, depth_limit, predicate, should_skip):
 
     while len(state_queue) != 0:
         d, curr_state = state_queue.pop()
-        if str(curr_state) in states_examined or d >= depth_limit or should_skip(curr):
+        print(d, str(curr_state))
+        if str(curr_state) in states_examined or d >= depth_limit or should_skip(curr_state):
             continue
 
         if predicate(curr_state):
