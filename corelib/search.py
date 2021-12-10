@@ -1,6 +1,8 @@
 """Represents the state of the entire system."""
 
 import collections
+import json
+import time
 
 from corelib.utils import dict_to_str
 
@@ -188,6 +190,7 @@ def system_state_BFS(start_state, depth_limit, predicate, should_skip):
     Run a BFS and capture all the states that are matching the predicate, until the given depth has
     been exhausted.
     """
+    start_time = time.time()
     states_found = []
 
     states_examined = {}
@@ -209,6 +212,12 @@ def system_state_BFS(start_state, depth_limit, predicate, should_skip):
         for next_state in frontier:
             if str(next_state) not in states_examined:
                 state_queue.appendleft((d + 1, next_state))
+    
+
+    end_time = time.time()
+    print("States examined: ", len(states_examined))
+    print("States found:", len(states_found))
+    print("Time taken:", end_time - start_time)
 
     return states_found, states_examined
 
@@ -230,3 +239,10 @@ def find_predicate_transition(start_state, end_state, predicate):
     else:
         print(f"Start state ({start_state}) was not an ancestor of the given end state ({end_state})")
     return states_found
+
+def print_unlinked_state(state, indent=2):
+    """
+    Unlinks the state from its previous states, and then prints it.
+    """
+    printable_state = build_start_state_from_existing_state(state)
+    print(json.dumps(printable_state, default=lambda o: o.__dict__, indent=2))

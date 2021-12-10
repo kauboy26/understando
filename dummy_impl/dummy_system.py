@@ -6,7 +6,7 @@ from corelib.utils import dict_to_str
 class DummyMessage(system_components.BaseMessage):
 
     def __init__(self, body):
-        super().__init__('')
+        super().__init__()
         self.body = body
     
     def __str__(self):
